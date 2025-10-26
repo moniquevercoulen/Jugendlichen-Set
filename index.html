@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Glaubenssätze – Jugend (4 Sets)</title>
+<meta name="theme-color" content="#0ea5e9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+:root{--bg:#f7fafc;--fg:#111827;--muted:#6b7280;--card:#fff;--accent:#0ea5e9;--border:#e5e7eb}
+.dark{--bg:#0b1120;--fg:#e5e7eb;--muted:#9ca3af;--card:#111827;--accent:#38bdf8;--border:#1f2937}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto;background:var(--bg);color:var(--fg)}
+.app{max-width:900px;margin:0 auto;padding:16px;display:flex;flex-direction:column;min-height:100%}
+header{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:12px}
+h1{font-size:20px;margin:0}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+select,button{background:var(--card);color:var(--fg);border:1px solid var(--border);border-radius:12px;padding:8px 12px;font-size:14px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.card{background:var(--card);border:2px solid var(--border);border-radius:18px;padding:22px;margin:12px 0;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;border:1px solid var(--border);color:var(--muted)}
+.belief{font-size:22px;line-height:1.35;margin:12px 0}
+.question{font-size:14px;color:var(--muted)}
+.emojis button{font-size:18px;padding:6px 8px}
+footer{margin-top:auto;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+@media(min-width:768px){.belief{font-size:26px}.question{font-size:15px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Glaubenssätze – Jugend (4 Sets)</h1>
+    <div class="controls">
+      <select id="setSelect"></select>
+      <button id="prevBtn">◀︎</button>
+      <button id="nextBtn">▶︎</button>
+      <button id="randomBtn" class="primary">Zufall</button>
+      <button id="todayBtn">Karte des Tages</button>
+      <button id="darkBtn">🌙/☀️</button>
+    </div>
+  </header>
+
+  <div id="card" class="card">
+    <span id="badge" class="badge">Set</span>
+    <div id="belief" class="belief">—</div>
+    <div id="question" class="question">—</div>
+    <div class="emojis" style="margin-top:8px;display:flex;gap:6px;">
+      <button data-emoji="like" title="Gefällt mir">👍</button>
+      <button data-emoji="love" title="Berührt mich">❤️</button>
+      <button data-emoji="think" title="Regt zum Nachdenken an">🤔</button>
+      <span id="savedEmoji" class="small"></span>
+    </div>
+  </div>
+
+  <footer>
+    <div class="small">Offline nutzbar. Tipp: „Zum Home-Bildschirm hinzufügen“.</div>
+    <div class="small">Sets: <span id="countSets">—</span> · Karten gesamt: <span id="countAll">—</span></div>
+  </footer>
+</div>
+
+<script>
+const DATA = {
+  "Schule & Lernen":{"color":"#06b6d4","cards":[
+    {"type":"neg","text":"Ich bin nicht so schlau wie die anderen.","q":"Wann hast du gemerkt, dass du bei etwas richtig gut bist?"},
+    {"type":"neg","text":"Wenn ich Fehler mache, bin ich dumm.","q":"Was hast du schon mal aus einem Fehler gelernt?"},
+    {"type":"neg","text":"Lehrer mögen mich eh nicht.","q":"Wer hat dich in der Schule schon mal unterstützt?"},
+    {"type":"neg","text":"Ich kann das sowieso nicht schaffen.","q":"Wann hast du was geschafft, obwohl du gezweifelt hast?"},
+    {"type":"neg","text":"Ich darf keine Hilfe fragen.","q":"Wer könnte dir gerade helfen, wenn du fragst?"},
+    {"type":"neg","text":"Ich bin einfach zu faul.","q":"Was hilft dir, wieder in Schwung zu kommen?"},
+    {"type":"neg","text":"Nur gute Noten machen mich wertvoll.","q":"Was kannst du gut, das man nicht benoten kann?"},
+    {"type":"neg","text":"Ich bin nicht gut genug.","q":"Worin bist du schon besser geworden?"},
+    {"type":"neg","text":"Wenn ich mich anstrenge, klappt’s trotzdem nicht.","q":"Wann hat sich Anstrengung bei dir gelohnt?"},
+    {"type":"neg","text":"Ich muss alles alleine hinkriegen.","q":"Wer steht dir zur Seite, wenn’s schwierig wird?"},
+    {"type":"pos","text":"Ich darf in meinem Tempo lernen.","q":"Was hilft dir, dein Tempo zu halten?"},
+    {"type":"pos","text":"Fehler gehören dazu – sie helfen mir weiter.","q":"Wann war ein Fehler hilfreich?"},
+    {"type":"pos","text":"Ich darf Fragen stellen und mir Hilfe holen.","q":"Wem könntest du heute eine Frage stellen?"},
+    {"type":"pos","text":"Ich kann stolz sein, wenn ich dranbleibe.","q":"Wofür kannst du dich heute loben?"},
+    {"type":"pos","text":"Ich darf Pausen machen, ohne schlechtes Gewissen.","q":"Was tut dir in Pausen gut?"},
+    {"type":"pos","text":"Ich bin mehr als meine Noten.","q":"Wofür wirst du gemocht, das nichts mit Schule zu tun hat?"},
+    {"type":"pos","text":"Ich kann jeden Tag ein Stück besser werden.","q":"Was war dein letzter Fortschritt?"},
+    {"type":"pos","text":"Ich darf stolz auf meine Fortschritte sein.","q":"Wann hast du dich das letzte Mal über dich gefreut?"},
+    {"type":"pos","text":"Ich kann mir Unterstützung holen, wenn’s schwierig ist.","q":"Wer tut dir gut, wenn’s stressig ist?"},
+    {"type":"pos","text":"Ich schaff das – Schritt für Schritt.","q":"Welchen kleinen Schritt machst du als Nächstes?"}
+  ]},
+  "Freundschaft & Selbstwert":{"color":"#9333ea","cards":[
+    {"type":"neg","text":"Ich bin langweilig.","q":"Was macht dich besonders, auch wenn’s andere nicht merken?"},
+    {"type":"neg","text":"Ich passe nicht dazu.","q":"Wo hast du dich schon mal wohlgefühlt?"},
+    {"type":"neg","text":"Ich muss mich verstellen, um gemocht zu werden.","q":"Wann konntest du einfach du selbst sein?"},
+    {"type":"neg","text":"Ich darf keine Fehler machen, sonst wenden sich alle ab.","q":"Wer blieb bei dir, auch wenn’s schwierig war?"},
+    {"type":"neg","text":"Ich bin nicht cool genug.","q":"Was finden andere an dir sympathisch?"},
+    {"type":"neg","text":"Ich darf nicht „nein“ sagen.","q":"Wann hast du mal „nein“ gesagt und es war richtig so?"},
+    {"type":"neg","text":"Niemand versteht mich.","q":"Wer hat dich schon mal verstanden, ohne viel erklären zu müssen?"},
+    {"type":"neg","text":"Ich bin nicht wichtig.","q":"Wem bist du wichtig, auch wenn du’s nicht immer merkst?"},
+    {"type":"neg","text":"Ich mache immer alles falsch.","q":"Wann hast du was richtig gut gemacht?"},
+    {"type":"neg","text":"Ich verliere sowieso alle Freunde.","q":"Wer bleibt dir treu, egal was passiert?"},
+    {"type":"pos","text":"Ich darf echt sein – das macht mich sympathisch.","q":"Wann hast du dich richtig wohlgefühlt mit dir?"},
+    {"type":"pos","text":"Ich bin liebenswert, auch wenn ich anders bin.","q":"Was macht dich einzigartig?"},
+    {"type":"pos","text":"Ich darf Grenzen setzen und trotzdem gemocht werden.","q":"Wo möchtest du beim nächsten Mal klarer „nein“ sagen?"},
+    {"type":"pos","text":"Ich darf Fehler machen und trotzdem dazugehören.","q":"Was war dein letzter kleiner „Fehler“, der gar keiner war?"},
+    {"type":"pos","text":"Ich bin genug – so, wie ich bin.","q":"Was an dir magst du besonders?"},
+    {"type":"pos","text":"Ich darf sagen, was ich denke.","q":"Was würdest du gern mal ehrlich sagen?"},
+    {"type":"pos","text":"Ich darf neue Freunde finden, die zu mir passen.","q":"Wo könntest du neue Menschen kennenlernen?"},
+    {"type":"pos","text":"Ich bin wertvoll – auch wenn mich nicht alle mögen.","q":"Was gibt dir Selbstvertrauen?"},
+    {"type":"pos","text":"Ich darf Unterstützung annehmen.","q":"Wer hilft dir, wenn’s dir nicht gut geht?"},
+    {"type":"pos","text":"Ich bin ein guter Freund / eine gute Freundin.","q":"Was machst du, das Freundschaft zeigt?"}
+  ]},
+  "Social Media & Selbstbild":{"color":"#ef4444","cards":[
+    {"type":"neg","text":"Nur wer viele Likes hat, ist cool.","q":"Was macht dich unabhängig von Likes besonders?"},
+    {"type":"neg","text":"Ich sehe nicht gut genug aus.","q":"Was magst du an dir, wenn du ehrlich bist?"},
+    {"type":"neg","text":"Ich verpasse was, wenn ich nicht online bin.","q":"Was passiert Schönes, wenn du mal offline bist?"},
+    {"type":"neg","text":"Alle anderen sind glücklicher als ich.","q":"Was läuft in deinem Leben gut?"},
+    {"type":"neg","text":"Ich muss immer erreichbar sein.","q":"Wann darfst du einfach mal nicht antworten?"},
+    {"type":"neg","text":"Ohne Filter sehe ich blöd aus.","q":"Wer mag dich genauso, wie du bist?"},
+    {"type":"neg","text":"Ich kann nicht abschalten.","q":"Was hilft dir, runterzukommen?"},
+    {"type":"neg","text":"Ich bin langweilig ohne Social Media.","q":"Was macht dich interessant im echten Leben?"},
+    {"type":"neg","text":"Ich bin nicht wichtig, wenn keiner reagiert.","q":"Wer hört dir wirklich zu?"},
+    {"type":"neg","text":"Ich muss perfekt sein, um dazuzugehören.","q":"Wann warst du echt – und das war völlig okay?"},
+    {"type":"pos","text":"Ich bin mehr als mein Profil.","q":"Was zeigt dich im echten Leben?"},
+    {"type":"pos","text":"Ich darf offline sein – das ist völlig okay.","q":"Wann gönnst du dir eine Handy-Pause?"},
+    {"type":"pos","text":"Ich darf entscheiden, wem ich folge und was mir guttut.","q":"Welche Seiten machen dich wirklich glücklich?"},
+    {"type":"pos","text":"Ich darf echt aussehen – auch ohne Filter.","q":"Wann fühlst du dich wohl in deiner Haut?"},
+    {"type":"pos","text":"Ich bin gut genug, auch ohne Likes.","q":"Wer mag dich so, wie du bist?"},
+    {"type":"pos","text":"Ich darf Pausen machen, ohne was zu verpassen.","q":"Wann planst du deine nächste bildschirmfreie Zeit?"},
+    {"type":"pos","text":"Ich darf mich zeigen, wie ich bin.","q":"Was würdest du posten, wenn’s egal wäre, was andere denken?"},
+    {"type":"pos","text":"Ich darf digital und echt sein – beides passt.","q":"Wie kannst du online und offline du selbst bleiben?"},
+    {"type":"pos","text":"Ich darf Grenzen setzen und mich schützen.","q":"Wen oder was möchtest du entfolgen, weil’s dir nicht guttut?"},
+    {"type":"pos","text":"Ich darf mich auf mein echtes Leben konzentrieren.","q":"Was würdest du heute lieber „in echt“ machen?"}
+  ]},
+  "Familie & Zukunft":{"color":"#10b981","cards":[
+    {"type":"neg","text":"Ich muss meine Eltern immer zufriedenstellen.","q":"Wann warst du ehrlich und es war trotzdem okay?"},
+    {"type":"neg","text":"Ich darf keine eigenen Entscheidungen treffen.","q":"Wo durftest du schon mal selbst bestimmen?"},
+    {"type":"neg","text":"Ich enttäusche meine Familie.","q":"Was hast du geschafft, worauf du stolz sein kannst?"},
+    {"type":"neg","text":"Ich muss perfekt sein, um geliebt zu werden.","q":"Wann wurdest du gemocht, obwohl’s nicht perfekt war?"},
+    {"type":"neg","text":"Ich darf keine Schwäche zeigen.","q":"Wann warst du ehrlich – und es hat dir gutgetan?"},
+    {"type":"neg","text":"Ich darf nicht anders sein als meine Familie.","q":"Worin bist du anders – und das ist gut so?"},
+    {"type":"neg","text":"Ich werde es nie schaffen.","q":"Woran hast du schon bewiesen, dass du was kannst?"},
+    {"type":"neg","text":"Meine Meinung zählt nicht.","q":"Wann wurde dir zugehört?"},
+    {"type":"neg","text":"Ich darf keine Träume haben.","q":"Was würdest du gern mal ausprobieren?"},
+    {"type":"neg","text":"Ich bin eine Belastung für meine Eltern.","q":"Wann hast du etwas getan, das anderen geholfen hat?"},
+    {"type":"pos","text":"Ich darf meinen eigenen Weg gehen.","q":"Welcher Schritt fühlt sich gerade richtig an?"},
+    {"type":"pos","text":"Ich darf Fehler machen – auch in meiner Familie.","q":"Wann hat ein Fehler dich stärker gemacht?"},
+    {"type":"pos","text":"Ich darf meine Meinung sagen.","q":"Was würdest du gern mal ehrlich sagen?"},
+    {"type":"pos","text":"Ich darf Unterstützung annehmen.","q":"Wer steht dir zur Seite?"},
+    {"type":"pos","text":"Ich darf träumen und Neues ausprobieren.","q":"Was willst du als Nächstes wagen?"},
+    {"type":"pos","text":"Ich bin gut genug – auch ohne Beweise.","q":"Wann hast du dich schon mal so gefühlt?"},
+    {"type":"pos","text":"Ich darf loslassen, was nicht zu mir passt.","q":"Was willst du nicht mehr mittragen?"},
+    {"type":"pos","text":"Ich darf stolz auf mich sein.","q":"Wofür bist du heute dankbar?"},
+    {"type":"pos","text":"Ich darf entscheiden, was ich aus meinem Leben mache.","q":"Was willst du wirklich?"},
+    {"type":"pos","text":"Ich darf Familie so leben, wie sie sich für mich richtig anfühlt.","q":"Was ist für dich „Zuhause“?"}
+  ]}
+};
+
+const el=s=>document.querySelector(s), setSel=el('#setSelect'), belief=el('#belief'), ques=el('#question'), badge=el('#badge'), saved=el('#savedEmoji'), cntAll=el('#countAll'), cntSets=el('#countSets');
+let current=Object.keys(DATA)[0], idx=0;
+for(const n of Object.keys(DATA)){const o=document.createElement('option');o.value=n;o.textContent=n;setSel.appendChild(o)} setSel.value=current;
+
+function cardsOf(s){return DATA[s].cards}
+function sKey(s,i){return 'gs-emoji-'+s+'-'+i}
+function eLabel(k){return k==='like'?'👍':(k==='love'?'❤️':'🤔')}
+function countAll(){return Object.values(DATA).reduce((a,s)=>a+s.cards.length,0)}
+cntSets.textContent=Object.keys(DATA).length; cntAll.textContent=countAll();
+
+function render(){
+  const set=DATA[current], c=set.cards[idx];
+  badge.textContent=`${current} • ${idx+1}/${set.cards.length} • ${c.type==='pos'?'positiv':'negativ'}`;
+  badge.style.borderColor=c.type==='pos'?'#16a34a':'#ef4444'; badge.style.color=c.type==='pos'?'#16a34a':'#ef4444';
+  belief.textContent=c.text; ques.textContent='Reflexionsfrage: '+c.q;
+  document.getElementById('card').style.borderColor=DATA[current].color||'#0ea5e9';
+  const mark=localStorage.getItem(sKey(current,idx)); saved.textContent=mark?'Markiert: '+eLabel(mark):'';
+}
+setSel.addEventListener('change',()=>{current=setSel.value; idx=0; render();});
+document.getElementById('prevBtn').addEventListener('click',()=>{idx=(idx-1+cardsOf(current).length)%cardsOf(current).length; render();});
+document.getElementById('nextBtn').addEventListener('click',()=>{idx=(idx+1)%cardsOf(current).length; render();});
+document.getElementById('randomBtn').addEventListener('click',()=>{idx=Math.floor(Math.random()*cardsOf(current).length); render();});
+document.getElementById('todayBtn').addEventListener('click',()=>{
+  const all=[]; for(const [n,s] of Object.entries(DATA)) s.cards.forEach((c,i)=>all.push({set:n,index:i}));
+  const d=new Date().toISOString().slice(0,10); let h=0; for(const ch of d) h=(h*31+ch.charCodeAt(0))>>>0;
+  const pick=all[h%all.length]; current=pick.set; setSel.value=current; idx=pick.index; render();
+});
+document.querySelectorAll('.emojis button').forEach(b=>b.addEventListener('click',()=>{localStorage.setItem(sKey(current,idx),b.dataset.emoji||b.textContent); saved.textContent='Markiert: '+(b.textContent);}));
+
+const root=document.documentElement;
+function applyTheme(){const s=localStorage.getItem('gs-theme')||'auto'; const pd=matchMedia('(prefers-color-scheme: dark)').matches; const dark=s==='dark'||(s==='auto'&&pd); dark?root.classList.add('dark'):root.classList.remove('dark');}
+applyTheme();
+document.getElementById('darkBtn').addEventListener('click',()=>{const s=localStorage.getItem('gs-theme')||'auto'; const n=s==='light'?'dark':(s==='dark'?'auto':'light'); localStorage.setItem('gs-theme',n); applyTheme();});
+render();
+</script>
+</body>
+</html>
