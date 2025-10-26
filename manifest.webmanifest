@@ -1,0 +1,14 @@
+{
+  "name": "Glaubenssätze Jugend",
+  "short_name": "Glaubenssätze",
+  "description": "Jugend-Set mit vier Themenbereichen – Zufallskarten, Karte des Tages & Dark Mode.",
+  "start_url": "/glaubenssaetze-app/",
+  "scope": "/glaubenssaetze-app/",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    { "src": "icon-256.png", "sizes": "256x256", "type": "image/png", "purpose": "maskable any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable any" }
+  ]
+}
